@@ -1,11 +1,11 @@
 
 const zod = require("zod");
-const { Human }= require("../db");
+const { User }= require("../db");
 const JWT_SECRET = require("../config");
 const express= require('express');
 const userRouter= express.Router();
 const jwt = require("jsonwebtoken");
-const router = require(".");
+const router = require("./index");
 //signup and signin routes
 
 const signupSchema = zod.object({
@@ -23,7 +23,7 @@ router.post("/signup", async (req,res)=>{
             message: "Email already taken / Incorrect inputs"
         })
     }
-    const user = Human.findOne({
+    const user = User.findOne({
         username: body.username
     })
 
@@ -32,7 +32,7 @@ router.post("/signup", async (req,res)=>{
                 message: "Email already taken / Incorrect inputs"
         })
     }
-    const dbUser= await Human.create(body); //create a new user
+    const dbUser= await User.create(body); //create a new user
     const token = jwt.sign({
         userId: dbUser._id
     }, JWT_SECRET)
@@ -42,7 +42,7 @@ router.post("/signup", async (req,res)=>{
     })
 })
 
-
+//sigin route 
 const signinBody = zod.object({
     username: zod.string().email(),
     password: zod.string()
@@ -55,7 +55,7 @@ router.post("/signin", async (req,res)=>{
         })
     }
 
-    const user = await Human.findOne({
+    const user = await User.findOne({
         username: req.body.username,
         password: req.body.password
     })
@@ -75,6 +75,58 @@ router.post("/signin", async (req,res)=>{
     })
 
 })
+
+
+//update routes
+const updateBody = zod.object({
+    password: zod.string().optional(),
+    firstName: zod.string().optional(),
+    lastName: zod.string().optional(),
+   })
+router.put("/",authMiddleware, async (req,res)=>{
+    const sucess = updateBody.safeParse(req.body);
+    if(!sucess){
+        return res.status(411).json({
+            message: "Error while updating information"
+        })
+    }
+    
+    await User.updateOne({_id: req.userId}, req.body);
+    res.json({
+        message: "Updated successfully"
+    })
+})
+
+
+router.get("/bulk", async (res,req)=>{
+    const filter= req.query.filter || "";
+
+    const users = User.findOne({
+        $or: [{
+            firstName: {
+                "$regex": filter
+            }
+        },{
+            lastName:{
+                "$regex": filter
+            }
+        }]
+    })
+
+    res.json({
+        user: users.map(user => ({
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            _id: user._id
+        }))
+    })
+})
+
+
+
+
+
 
 
 module.exports = userRouter;

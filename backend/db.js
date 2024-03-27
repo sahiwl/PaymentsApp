@@ -30,7 +30,38 @@ const paytmSchema = new mongoose.Schema({
     }
 });
 
-const Human = new mongoose.model("Human", paytmSchema);
+const accountSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    balance: {
+        type: Number,
+        required: true
+    }
+})
+
+const Account = new mongoose.model('Account', accountSchema)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const User = new mongoose.model("User", paytmSchema);
 module.exports = {
-    Human
+    User,
+    Account
 };
